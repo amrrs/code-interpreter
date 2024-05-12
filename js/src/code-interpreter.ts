@@ -46,7 +46,7 @@ export class JupyterExtension {
     return this.kernelIDPromise.promise
   }
 
-  constructor(private sandbox: CodeInterpreter) {}
+  constructor(private sandbox: CodeInterpreter) { }
 
   async connect(timeout?: number) {
     return this.startConnectingToDefaultKernel(this.setDefaultKernelID, {
@@ -95,6 +95,12 @@ export class JupyterExtension {
       onResult,
       timeout
     )
+  }
+
+  async getHistory(timeout?: number) {
+    const kernelID = await this.defaultKernelID
+    const ws = this.connectedKernels[kernelID] || (await this.connectToKernelWS(kernelID))
+    return await ws.sendHistoryMessage(timeout)
   }
 
   private async startConnectingToDefaultKernel(

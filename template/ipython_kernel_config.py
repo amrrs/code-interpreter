@@ -607,7 +607,7 @@ c.InteractiveShell.colors = "NoColor"
 #  because otherwise you'll spend more time re-flushing a too small cache than
 #  working
 #  Default: 1000
-# c.InteractiveShell.cache_size = 1000
+c.InteractiveShell.cache_size = 99999
 
 ## Use colors for displaying information about objects. Because this information
 #  is passed through a pager (like 'less'), and some pagers get confused with
@@ -632,7 +632,7 @@ c.InteractiveShell.colors = "NoColor"
 
 ## Total length of command history
 #  Default: 10000
-# c.InteractiveShell.history_length = 10000
+c.InteractiveShell.history_length = 99999
 
 ## The number of saved history entries to be loaded into the history buffer at
 #  startup.
@@ -742,7 +742,7 @@ c.InteractiveShell.colors = "NoColor"
 
 ##
 #  See also: InteractiveShell.cache_size
-# c.ZMQInteractiveShell.cache_size = 1000
+c.ZMQInteractiveShell.cache_size = 99999
 
 ##
 #  See also: InteractiveShell.color_info
@@ -769,7 +769,7 @@ c.InteractiveShell.colors = "NoColor"
 
 ## Total length of command history
 #  See also: InteractiveShell.history_length
-# c.ZMQInteractiveShell.history_length = 10000
+c.ZMQInteractiveShell.history_length = 99999
 
 ##
 #  See also: InteractiveShell.history_load_length

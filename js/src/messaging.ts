@@ -458,6 +458,61 @@ export class JupyterKernelWebSocket {
     })
   }
 
+  public sendHistoryMessage(
+    timeout?: number
+  ) {
+    return new Promise((resolve, reject) => {
+      const msg_id = id(16)
+      const data = this.sendHistoryRequest(msg_id)
+
+      // give limited time for response
+      let timeoutSet: number | NodeJS.Timeout
+      if (timeout) {
+        timeoutSet = setTimeout(() => {
+          // stop waiting for response
+          delete this.idAwaiter[msg_id]
+          reject(
+            new Error(
+              `Awaiting response with history with id: ${msg_id} timed out.`
+            )
+          )
+        }, timeout)
+      }
+
+      // expect response
+
+
+      this.idAwaiter[msg_id] = (responseData: {
+        // 'ok' if the request succeeded or 'error', with error information as in all other replies.
+        'status': 'ok' | 'error',
+
+        // A list of 3 tuples, either:
+        // (session, line_number, input) or
+        // (session, line_number, (input, output)),
+        // depending on whether output was False or True, respectively.
+        'history': any,
+      }) => {
+        // stop timeout
+        clearInterval(timeoutSet as number)
+        // stop waiting for response
+        delete this.idAwaiter[msg_id]
+
+        if (responseData.status == 'error') {
+          reject(
+            new Error(
+              `Awaiting response with history with id: ${msg_id} timed out.`
+            )
+          )
+        }
+
+        resolve(responseData.history)
+      }
+
+      const json = JSON.stringify(data)
+      this.ws.send(json)
+    })
+  }
+
   /**
    * Listens for messages from WebSocket server.
    */
@@ -500,9 +555,59 @@ export class JupyterKernelWebSocket {
       content: {
         code: code,
         silent: false,
-        store_history: false,
+        store_history: true,
         user_expressions: {},
         allow_stdin: false
+      }
+    }
+  }
+
+  /**
+   * Creates a websocket message for code execution.
+   * @param msg_id Unique message id.
+   * @param code Code to be executed.
+   */
+  private sendHistoryRequest(msg_id: string) {
+    const session = id(16)
+    return {
+      header: {
+        msg_id: msg_id,
+        username: 'e2b',
+        session: session,
+        msg_type: 'history_request',
+        version: '5.3'
+      },
+      parent_header: {},
+      metadata: {},
+      content: {
+        // If True, also return output history in the resulting dict.
+        'output': true,
+
+        // If True, return the raw input history, else the transformed input.
+        'raw': true,
+
+        // So far, this can be 'range', 'tail' or 'search'.
+        'hist_access_type': "search",
+
+        // If hist_access_type is 'range', get a range of input cells.session
+        // is a number counting up each time the kernel starts; you can give
+        // a positive session number, or a negative number to count back from
+        // the current session.
+        'session': session,
+        // start and stop are line(cell) numbers within that session.
+        'start': 0,
+        'stop': 10,
+
+        // If hist_access_type is 'tail' or 'search', get the last n cells.
+        'n': 10,
+
+        // If hist_access_type is 'search', get cells matching the specified glob
+        // pattern(with * and ? as wildcards).
+        'pattern': "*",
+
+        // If hist_access_type is 'search' and unique is true, do not
+        // include duplicated history.Default is false.
+        'unique': false,
       }
     }
   }
