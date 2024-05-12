@@ -606,7 +606,7 @@ export class JupyterKernelWebSocket {
         'output': true,
 
         // If True, return the raw input history, else the transformed input.
-        'raw': false,
+        'raw': true,
 
         // So far, this can be 'range', 'tail' or 'search'.
         'hist_access_type': "search",
@@ -621,7 +621,7 @@ export class JupyterKernelWebSocket {
         // 'stop': 10,
 
         // If hist_access_type is 'tail' or 'search', get the last n cells.
-        'n': 10,
+        // 'n': 10,
 
         // If hist_access_type is 'search', get cells matching the specified glob
         // pattern(with * and ? as wildcards).
