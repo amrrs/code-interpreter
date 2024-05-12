@@ -2,6 +2,12 @@ import IWebSocket from 'isomorphic-ws'
 import { ProcessMessage } from 'e2b'
 import { id } from './utils'
 
+export interface History {
+  cell: number
+  input: string
+  output: string | null
+}
+
 /**
  * Represents an error that occurred during the execution of a cell.
  * The error contains the name of the error, the value of the error, and the traceback.
@@ -328,6 +334,12 @@ export class JupyterKernelWebSocket {
     this.ws.onmessage = (e: IWebSocket.MessageEvent) => {
       const message = JSON.parse(e.data.toString())
       const parentMsgId = message.parent_header.msg_id
+
+      if (message.msg_type == 'history_reply') {
+        this.idAwaiter[parentMsgId](message.content)
+        return
+      }
+
       const cell = this.cells[parentMsgId]
       if (!cell) {
         return
@@ -505,7 +517,17 @@ export class JupyterKernelWebSocket {
           )
         }
 
-        resolve(responseData.history)
+        const history = (responseData.history as any[]).reduce<History[]>((acc: History[], curr: any) => {
+          acc.push({
+            cell: curr[1],
+            input: curr[2][0],
+            output: curr[2][1]
+          })
+
+          return acc
+        }, [] as History[])
+
+        resolve(history)
       }
 
       const json = JSON.stringify(data)
@@ -584,7 +606,7 @@ export class JupyterKernelWebSocket {
         'output': true,
 
         // If True, return the raw input history, else the transformed input.
-        'raw': true,
+        'raw': false,
 
         // So far, this can be 'range', 'tail' or 'search'.
         'hist_access_type': "search",
@@ -593,10 +615,10 @@ export class JupyterKernelWebSocket {
         // is a number counting up each time the kernel starts; you can give
         // a positive session number, or a negative number to count back from
         // the current session.
-        'session': session,
+        // 'session': session,
         // start and stop are line(cell) numbers within that session.
-        'start': 0,
-        'stop': 10,
+        // 'start': 0,
+        // 'stop': 10,
 
         // If hist_access_type is 'tail' or 'search', get the last n cells.
         'n': 10,
@@ -607,7 +629,7 @@ export class JupyterKernelWebSocket {
 
         // If hist_access_type is 'search' and unique is true, do not
         // include duplicated history.Default is false.
-        'unique': false,
+        'unique': true,
       }
     }
   }
